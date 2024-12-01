@@ -6,6 +6,8 @@ abstract class Expr {
     R visitGroupingExpr(Grouping expr);
     R visitLiteralExpr(Literal expr);
     R visitUnaryExpr(Unary expr);
+    R visitBlockExpr(Block expr);
+    R visitConditionExpr(Condition expr);
   }
   static class Binary extends Expr {
     Binary(Expr left, Token operator, Expr right) {
@@ -59,6 +61,36 @@ abstract class Expr {
     }
 
     final Token operator;
+    final Expr right;
+  }
+  static class Block extends Expr {
+    Block(Expr left, Expr right) {
+      this.left = left;
+      this.right = right;
+    }
+
+    @Override
+    <R> R accept(Visitor<R> visitor) {
+      return visitor.visitBlockExpr(this);
+    }
+
+    final Expr left;
+    final Expr right;
+  }
+  static class Condition extends Expr {
+    Condition(Expr cond, Expr left, Expr right) {
+      this.cond = cond;
+      this.left = left;
+      this.right = right;
+    }
+
+    @Override
+    <R> R accept(Visitor<R> visitor) {
+      return visitor.visitConditionExpr(this);
+    }
+
+    final Expr cond;
+    final Expr left;
     final Expr right;
   }
 
