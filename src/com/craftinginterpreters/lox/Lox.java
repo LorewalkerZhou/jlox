@@ -11,7 +11,9 @@ import java.util.List;
 
 public class Lox {
 
+    private static final Interpreter interpreter = new Interpreter();
     static boolean hadError = false;
+    static boolean hadRuntimeError = false;
 
     public static void main(String[] args) throws IOException {
         if (args.length > 1) {
@@ -29,6 +31,7 @@ public class Lox {
         run(new String(bytes, Charset.defaultCharset()));
 
         if (hadError) System.exit(65);
+        if (hadRuntimeError) System.exit(70);
     }
 
     private static void runPrompt() throws IOException {
@@ -52,7 +55,7 @@ public class Lox {
 
         if (hadError) return;
 
-        System.out.println(new AstPrinter().print(expression));
+        interpreter.interpret(expression);
     }
 
     static void error(Token token, String message) {
@@ -65,8 +68,15 @@ public class Lox {
     static void error(int line, int line_offset, String line_string, String message) {
         System.err.println("Error:" + message);
         System.err.println(line + " |" + line_string);
-        int times = line_offset + String.valueOf(line).length() + 2;
+        int times = line_offset + String.valueOf(line).length() + 1;
         String indent = String.join("", Collections.nCopies(times, " "));
         System.err.println(indent + "^-- Here.");
+    }
+
+    static void runtimeError(RuntimeError run_time_error) {
+        Token token = run_time_error.token;
+        String message = run_time_error.getMessage();
+        error(token, message);
+        hadRuntimeError = true;
     }
 }
