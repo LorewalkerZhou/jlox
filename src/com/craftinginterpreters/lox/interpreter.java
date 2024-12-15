@@ -5,6 +5,7 @@ import java.util.List;
 class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     private Environment environment = new Environment();
+    private boolean isBreak = false;
 
     void interpret(List<Stmt> statements) {
         try {
@@ -111,6 +112,14 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     @Override
+    public Object visitLogicalExpr(Expr.Logical expr) {
+        boolean res = isTruthy(evaluate(expr.left));
+        if (!res && expr.operator.type == TokenType.AND) return false;
+        if (res && expr.operator.type == TokenType.OR) return true;
+        return evaluate(expr.right);
+    }
+
+    @Override
     public Void visitBlockStmt(Stmt.Block stmt) {
         executeBlock(stmt.statements, new Environment(environment));
         return null;
@@ -119,6 +128,16 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     @Override
     public Void visitExpressionStmt(Stmt.Expression stmt) {
         evaluate(stmt.expression);
+        return null;
+    }
+
+    @Override
+    public Void visitIfStmt(Stmt.If stmt) {
+        if (isTruthy(evaluate(stmt.condition))) {
+            execute(stmt.thenBranch);
+        } else if (stmt.elseBranch != null) {
+            execute(stmt.elseBranch);
+        }
         return null;
     }
 
@@ -139,6 +158,21 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return null;
     }
 
+    @Override
+    public Void visitWhileStmt(Stmt.While stmt) {
+        while (isTruthy(evaluate(stmt.condition)) && !isBreak) {
+            execute(stmt.body);
+        }
+        isBreak = false;
+        return null;
+    }
+
+    @Override
+    public Void visitBreakStmt(Stmt.Break stmt) {
+        isBreak = true;
+        return null;
+    }
+
     private Object evaluate(Expr expr) {
         return expr.accept(this);
     }
@@ -154,6 +188,7 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             this.environment = environment;
 
             for (Stmt statement : statements) {
+                if (isBreak) return;
                 execute(statement);
             }
         } finally {

@@ -1,5 +1,7 @@
 package com.craftinginterpreters.lox;
 
+import java.util.List;
+
 abstract class Expr {
   interface Visitor<R> {
     R visitAssignExpr(Assign expr);
@@ -10,6 +12,7 @@ abstract class Expr {
     R visitVariableExpr(Variable expr);
     R visitBlockExpr(Block expr);
     R visitConditionExpr(Condition expr);
+    R visitLogicalExpr(Logical expr);
   }
   static class Assign extends Expr {
     Assign(Token name, Expr value) {
@@ -119,6 +122,22 @@ abstract class Expr {
 
     final Expr cond;
     final Expr left;
+    final Expr right;
+  }
+  static class Logical extends Expr {
+    Logical(Expr left, Token operator, Expr right) {
+      this.left = left;
+      this.operator = operator;
+      this.right = right;
+    }
+
+    @Override
+    <R> R accept(Visitor<R> visitor) {
+      return visitor.visitLogicalExpr(this);
+    }
+
+    final Expr left;
+    final Token operator;
     final Expr right;
   }
 

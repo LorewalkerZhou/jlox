@@ -27,6 +27,7 @@ class Environment {
 
         if (enclosing != null) {
             enclosing.assign(name, value);
+            return;
         }
 
         throw new RuntimeError(name,
@@ -39,6 +40,8 @@ class Environment {
         }
 
         if (enclosing != null) return enclosing.get(name);
+
+
 
         throw new RuntimeError(name,
                 "Undefined variable '" + name.lexeme + "'.");
