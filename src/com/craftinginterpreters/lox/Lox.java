@@ -12,6 +12,7 @@ import java.util.List;
 public class Lox {
 
     private static final Interpreter interpreter = new Interpreter();
+    static boolean promptMode = false;
     static boolean hadError = false;
     static boolean hadRuntimeError = false;
 
@@ -35,12 +36,13 @@ public class Lox {
     }
 
     private static void runPrompt() throws IOException {
+        promptMode = true;
         InputStreamReader input = new InputStreamReader(System.in);
         BufferedReader reader = new BufferedReader(input);
         for (;;) {
             System.out.println("> ");
             String line = reader.readLine();
-            if (line == null) break;
+            if (line.equals("exit")) break;
             run(line);
             hadError = false;
         }
@@ -51,11 +53,15 @@ public class Lox {
         List<Token> tokens = scanner.scanTokens();
 
         Parser parser = new Parser(tokens);
-        Expr expression = parser.parse();
-
+        if (promptMode && !source.endsWith(";")) {
+            Expr expr = parser.parseExpr();
+            if (hadError) return;
+            System.out.println(interpreter.interpret(expr));
+            return;
+        }
+        List<Stmt> statements = parser.parse();
         if (hadError) return;
-
-        interpreter.interpret(expression);
+        interpreter.interpret(statements);
     }
 
     static void error(Token token, String message) {
@@ -66,11 +72,12 @@ public class Lox {
     }
 
     static void error(int line, int line_offset, String line_string, String message) {
+        hadError = true;
         System.err.println("Error:" + message);
         System.err.println(line + " |" + line_string);
         int times = line_offset + String.valueOf(line).length() + 1;
         String indent = String.join("", Collections.nCopies(times, " "));
-        System.err.println(indent + "^-- Here.");
+        System.err.println(indent + "^");
     }
 
     static void runtimeError(RuntimeError run_time_error) {
